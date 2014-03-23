@@ -1,8 +1,7 @@
-
-var fs = require("fs");
+var utility = require('./lib/utility.js');
+var fs = require('fs');
 var dictionaryHash = {};
 var dictionariesLoaded = false;
-var dictionariesLoading = false;
 var dictionariesToLoad = [
   'family',
   'family_new',
@@ -23,27 +22,29 @@ var addToMasterDictionary = function(words, dictionaryName) {
   var currentWord = null;
   for(var i=0 ; i<words.length ; i++) {
     currentWord = words[i].toLowerCase();
-    if(dictionaryHash[dictionaryName] == undefined) dictionaryHash[dictionaryName] = {};
+    if(dictionaryHash[dictionaryName] === undefined) dictionaryHash[dictionaryName] = {};
     dictionaryHash[dictionaryName][currentWord] = true;
   }
 };
 
 var loadDictionaries = function() {
   if(dictionariesLoaded) return true;
-  if(dictionariesLoading) return false;
   for(var i=0 ; i<dictionariesToLoad.length ; i++) {
     var dictionaryName = dictionariesToLoad[i];
-    addToMasterDictionary(fs.readFileSync("dictionaries/" + dictionaryName + ".txt").toString().split('\n'), dictionaryName);
+    addToMasterDictionary(fs.readFileSync('dictionaries/' + dictionaryName + '.txt').
+      toString().split('\n'), dictionaryName);
   }
   dictionariesLoaded = true;
-  dictionariesLoading = false;
   return true;
 }
 
 /* Make sure the dictionaries get loaded up front */
-loadDictionaries(function() { console.log('Dictionaries are loaded') });
+console.log('Loading dictionaries...');
+loadDictionaries();
+console.log('Dictionaries are loaded');
 
 module.exports = {
   loadDictionaries: loadDictionaries,
-  dictionaryHash: dictionaryHash
+  dictionaryHash: dictionaryHash,
+  utility: utility
 };
