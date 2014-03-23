@@ -22,6 +22,12 @@ describe('#addWordToEndOfOffsetList', function() {
     expect(offsetList[0]['word']).to.eq('Abcdef');
     expect(offsetList[0]['offset']).to.eq(101);
   });
+  it('appends strings to the end of the list even when its empty', function() {
+    var offsetList = [];
+    addWordToEndOfOffsetList(offsetList, '', 101);
+    expect(offsetList[0]['word']).to.eq('');
+    expect(offsetList[0]['offset']).to.eq(101);
+  });
 });
 
 describe('#isStopTag', function() {

@@ -7,6 +7,59 @@ console.log('Loading dictionaries...');
 dictionaries.load();
 console.log('Dictionaries are loaded');
 
+var buildResult = function(name, startItem, lastItem, lastWord) {
+  return { name: name,
+           initialOffset: startItem['offset'],
+           endingOffset: lastItem['offset'] + lastWord.length };
+};
+
+var findNamesAndOffsets = function(html) {
+  var wordsWithOffsets = utility.explodeHtml(html),
+      currentStateHash = null,
+      nameStartIndex = null,
+      nameStartItem = null,
+      nameLastIndex = null,
+      nameLastItem = null,
+      allNamesWithOffsets = [];
+  wordsWithOffsets = utility.removeTagsFromElements(wordsWithOffsets);
+  for (var i=0 ; i<wordsWithOffsets.length ; i++) {
+    var word = wordsWithOffsets[i]['word'];
+    currentStateHash = checkWordAgainstState(word, currentStateHash);
+
+    if (currentStateHash['returnNames']) {
+      // Determine the start and end indices of the first returned word.
+      // This might be a polynomial or uninomial. Check the number of words
+      // by splitting on spaces. Add the name and offsets to the results
+      if (nameStartIndex === null) nameStartIndex = i;
+      var words = currentStateHash['returnNames'][0].split(' ');
+      var lastWord = words.pop();
+      nameLastIndex = nameStartIndex + words.length;
+      allNamesWithOffsets.push(buildResult(currentStateHash['returnNames'][0],
+                                           wordsWithOffsets[nameStartIndex],
+                                           wordsWithOffsets[nameLastIndex],
+                                           lastWord));
+      // If there are two return names, then the second name will always be
+      // a uninomial - a Family or above, or a Genus with stop punctuation
+      if (currentStateHash['returnNames'].length == 2) {
+        allNamesWithOffsets.push(buildResult(currentStateHash['returnNames'][1],
+                                             wordsWithOffsets[i],
+                                             wordsWithOffsets[i],
+                                             currentStateHash['returnNames'][1]));
+      }
+      nameStartIndex = null;
+    }
+
+    if (currentStateHash['workingName']) {
+      // There is a workingName, but the index hasn't been set yet, so set it
+      if (nameStartIndex === null) nameStartIndex = i;
+    } else {
+      // There is no workingName, so reset the start index
+      nameStartIndex = null;
+    }
+  }
+  return allNamesWithOffsets;
+};
+
 var isAbbreviatedGenus = function(workingName) {
   return /^[A-Z][a-z]?$/.test(workingName);
 };
@@ -23,16 +76,19 @@ var endsWithPunctuation = function(word) {
   return /[,;\.\)\]][^A-Za-z]*$/i.test(word);
 };
 
-// var findAndMarkupNames = function(html) {
-//   var wordsWithOffsets = utility.explodeHtml(html);
-//   var lastGenus = null;
-//   var currentStateHash = null;
-//   wordsWithOffsets = utility.removeTagsFromElements(wordsWithOffsets);
-//   for (var i=0 ; i<wordsWithOffsets.length ; i++) {
-//     var word = wordsWithOffsets[i]['word'];
-//     currentStateHash = checkWordAgainstState(word, currentStateHash);
-//   }
-// };
+var buildState = function(workingName, workingRank, returnNames) {
+  var returnHash = {}
+  var finalNames = []
+  if(!returnNames) returnNames = [];
+  for (var i=0 ; i<returnNames.length ; i++) {
+    var cleanedName = prepareReturnString(returnNames[i]);
+    if (cleanedName) finalNames.push(cleanedName);
+  }
+  if (workingName) returnHash['workingName'] = workingName;
+  if (workingRank) returnHash['workingRank'] = workingRank;
+  if (finalNames.length > 0) returnHash['returnNames'] = finalNames;
+  return returnHash;
+};
 
 var checkWordAgainstState = function(word, currentStateHash) {
   if (!word) word = '';
@@ -49,12 +105,13 @@ var checkWordAgainstState = function(word, currentStateHash) {
     currentStateHash['workingName'] = '';
     workingName = '';
   }
+  if (cleanWord == '') {
+    return buildState(null, null, [ workingName ]);
+  }
 
   // Found Abbreviation
   if (isAbbreviatedGenusWithPeriod(word)) {
-    returnHash = { workingName: cleanWord, workingRank: 'genus' };
-    if (workingName !== '') returnHash['returnNames'] = [ workingName ];
-    return returnHash;
+    return buildState(cleanWord, 'genus', [ workingName ]);
   }
   // Within Genus
   else if (workingRank === 'genus') {
@@ -62,64 +119,67 @@ var checkWordAgainstState = function(word, currentStateHash) {
     if (isSpecies(currentStateHash)) {
       if (endsWithPunctuation(word)) {
         // that ends the name
-        return { returnNames: [ workingName + ' ' + cleanWord ] };
+        return buildState(null, null, [ workingName + ' ' + cleanWord ]);
       } else {
         // that is the next word in a name
-        return { workingName: workingName + ' ' + cleanWord, workingRank: 'species' };
+        return buildState(workingName + ' ' + cleanWord, 'species');
       }
+    }
+    if (isGenus(currentStateHash)) {
+      return buildState(cleanWord, 'genus', [ workingName ]);
+    }
+    if (isFamilyOrAbove(currentStateHash)) {
+      return buildState(null, null, [ workingName, utility.ucfirst(lowerCaseCleanWord) ]);
     }
   }
   // Within Species
   else if (workingRank === 'species') {
     if (isSpecies(currentStateHash)) {
-      return { workingName: workingName + ' ' + cleanWord, workingRank: 'species' };
+      return buildState(workingName + ' ' + cleanWord, 'species');
     }
     if (isRank(currentStateHash)) {
       // node the use of `word` here to retain original punctuation
-      return { workingName: workingName + ' ' + word, workingRank: 'rank' };
+      return buildState(workingName + ' ' + word, 'rank');
     }
     if (isGenus(currentStateHash)) {
-      return { workingName: cleanWord, workingRank: 'genus', returnNames: [ workingName ] };
+      return buildState(cleanWord, 'genus', [ workingName ]);
     }
     if (isFamilyOrAbove(currentStateHash)) {
-      return { returnNames: [ workingName, utility.ucfirst(lowerCaseCleanWord) ] };
+      return buildState(null, null, [ workingName, utility.ucfirst(lowerCaseCleanWord) ]);
     }
   }
   // Within Rank
   else if (workingRank === 'rank') {
     if (isSpecies(currentStateHash)) {
-      return { workingName: workingName + ' ' + cleanWord, workingRank: 'species' };
+      return buildState(workingName + ' ' + cleanWord, 'species');
     }
     if (isGenus(currentStateHash)) {
-      return { workingName: cleanWord, workingRank: 'genus', returnNames: [ workingName ] };
+      return buildState(cleanWord, 'genus', [ workingName ]);
     }
     if (isFamilyOrAbove(currentStateHash)) {
-      return { returnNames: [ workingName, utility.ucfirst(lowerCaseCleanWord) ] };
+      return buildState(null, null, [ workingName, utility.ucfirst(lowerCaseCleanWord) ]);
     }
   }
   // No working state
   else {
     if (isGenus(currentStateHash)) {
       if (endsWithPunctuation(word)) {
-        return { returnNames: [ utility.ucfirst(lowerCaseCleanWord) ] };
+        return buildState(null, null, [ utility.ucfirst(lowerCaseCleanWord) ]);
       } else {
-        return { workingName: cleanWord, workingRank: 'genus' };
+        return buildState(cleanWord, 'genus');
       }
     }
     if (isFamilyOrAbove(currentStateHash)) {
-      return { returnNames: [ utility.ucfirst(lowerCaseCleanWord) ] };
+      return buildState(null, null, [ utility.ucfirst(lowerCaseCleanWord) ]);
     }
   }
   // Return the last known name
-  if (workingName) {
-    return { returnNames: [ workingName ] };
-  }
-  return null;
+  return buildState(null, null, [ workingName ]);
 }
 
 var prepareReturnString = function(workingName) {
-  if (workingName.length <= 2) workingName = "";
   if (!workingName) return null;
+  if (workingName.length <= 2) return null;
 
   // AMANITA MUSCARIA
   if (match = workingName.match(/^([A-Z])([A-Z\[\]-]*)( |$)(.*$)/)) {
@@ -207,7 +267,7 @@ var isRank = function(currentStateHash) {
 module.exports = {
   dictionaries: dictionaries,
   utility: utility,
-  // findAndMarkupNames: findAndMarkupNames,
+  findNamesAndOffsets: findNamesAndOffsets,
   isAbbreviatedGenus: isAbbreviatedGenus,
   isAbbreviatedGenusWithPeriod: isAbbreviatedGenusWithPeriod,
   startsWithPunctuation: startsWithPunctuation,

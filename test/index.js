@@ -1,6 +1,7 @@
 var expect = require('chai').expect,
+    fs = require('fs'),
     taxonfinder = require('../index'),
-    // findAndMarkupNames = taxonfinder.findAndMarkupNames,
+    findNamesAndOffsets = taxonfinder.findNamesAndOffsets,
     isAbbreviatedGenus = taxonfinder.isAbbreviatedGenus,
     isAbbreviatedGenusWithPeriod = taxonfinder.isAbbreviatedGenusWithPeriod,
     startsWithPunctuation = taxonfinder.startsWithPunctuation,
@@ -18,11 +19,20 @@ var buildState = function(word, cleanWord, lowerCaseCleanWord, workingName) {
     workingName: workingName };
 };
 
-// describe('#findAndMarkupNames', function() {
-//   it('does something', function() {
-//     findAndMarkupNames("<p class='something'>Felis leo hello</p>");
-//   });
-// });
+describe('#findNamesAndOffsets', function() {
+  it('finds and returns names and offsets', function() {
+    var result = findNamesAndOffsets("The quick brown Animalia Vulpes vulpes (Canidae; Carnivora; Animalia) jumped over the lazy Canis lupis familiaris");
+    expect(result[0]['name']).to.eq('Animalia');
+    expect(result[0]['initialOffset']).to.eq(16);
+    expect(result[0]['endingOffset']).to.eq(24);
+    expect(result[1]['name']).to.eq('Vulpes vulpes');
+    expect(result[1]['initialOffset']).to.eq(25);
+    expect(result[1]['endingOffset']).to.eq(38);
+    expect(result[2]['name']).to.eq('Canidae');
+    expect(result[2]['initialOffset']).to.eq(39);
+    expect(result[2]['endingOffset']).to.eq(46);
+  });
+});
 
 describe('#isAbbreviatedGenus', function() {
   it('recognizes abreviations without periods', function() {
@@ -70,7 +80,7 @@ describe('#endsWithPunctuation', function() {
 
 describe('#checkWordAgainstState', function() {
   it('does nothing with null', function() {
-    expect(checkWordAgainstState()).to.be.null;
+    expect(checkWordAgainstState()).to.be.empty;
   });
   it('returns working name when finding potential abbreviations', function() {
     var response = checkWordAgainstState('F.', { workingName: 'Felis', workingRank: 'genus' });
@@ -99,7 +109,7 @@ describe('#checkWordAgainstState', function() {
     expect(response['returnNames'][0]).to.eq('Animalia');
   });
   it('does nothing with nonsense', function() {
-    expect(checkWordAgainstState('nonsense')).to.be.null;
+    expect(checkWordAgainstState('nonsense')).to.be.empty;
   });
   it('returns the last known name when encountering nonsense', function() {
     var response = checkWordAgainstState('nonsense', { workingName: 'Felis', workingRank: 'genus' });
@@ -116,6 +126,18 @@ describe('#checkWordAgainstState', function() {
     var response = checkWordAgainstState('leo', { workingName: 'Felis', workingRank: 'genus' });
     expect(response['workingName']).to.eq('Felis leo');
     expect(response['workingRank']).to.eq('species');
+  });
+  it('finds genera after genera', function() {
+    var response = checkWordAgainstState('Felis', { workingName: 'Felis', workingRank: 'genus' });
+    expect(response['workingName']).to.eq('Felis');
+    expect(response['workingRank']).to.eq('genus');
+    expect(response['returnNames'][0]).to.eq('Felis');
+  });
+  it('finds families or above after genera', function() {
+    var response = checkWordAgainstState('Animalia', { workingName: 'Felis', workingRank: 'genus' });
+    expect(response['workingName']).to.be.undefined;
+    expect(response['returnNames'][0]).to.eq('Felis');
+    expect(response['returnNames'][1]).to.eq('Animalia');
   });
   // State Species
   it('attaches species to species', function() {
