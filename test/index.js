@@ -20,6 +20,9 @@ var buildState = function(word, cleanWord, lowerCaseCleanWord, workingName) {
 };
 
 describe('#findNamesAndOffsets', function() {
+  // it('checks a document', function() {
+  //   console.log(findNamesAndOffsets(fs.readFileSync('test.txt').toString()));
+  // });
   it('finds and returns names and offsets', function() {
     var result = findNamesAndOffsets("The quick brown Animalia Vulpes vulpes (Canidae; Carnivora; Animalia) jumped over the lazy Canis lupis familiaris");
     expect(result[0]['name']).to.eq('Animalia');
