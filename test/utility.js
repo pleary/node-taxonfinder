@@ -4,7 +4,8 @@ var expect = require('chai').expect,
     addWordToEndOfOffsetList = utility.addWordToEndOfOffsetList,
     isStopTag = utility.isStopTag,
     explodeHtml = utility.explodeHtml,
-    removeTagsFromElements = utility.removeTagsFromElements;
+    removeTagsFromElements = utility.removeTagsFromElements,
+    ucfirst = utility.ucfirst;
 
 describe('#clean', function() {
   it('removes non-characters from beginning and ends of lines', function() {
@@ -47,7 +48,7 @@ describe('#removeTagsFromElements', function() {
   it('always returns null as the last item', function() {
     var result = removeTagsFromElements([ ]);
     expect(result.length).to.eq(1);
-    expect(result[0]).to.be.null;
+    expect(result[0]['word']).to.be.null;
   });
   it('does nothing with plain text', function() {
     var result = removeTagsFromElements([{ word: 'hello' }]);
@@ -57,24 +58,24 @@ describe('#removeTagsFromElements', function() {
   it('replaces complete blocker tags with null', function() {
     var result = removeTagsFromElements([{ word: '<p>' }]);
     expect(result.length).to.eq(2);
-    expect(result[0]).to.be.null;
-    expect(result[1]).to.be.null;
+    expect(result[0]['word']).to.be.null;
+    expect(result[1]['word']).to.be.null;
   });
   it('replaces split blocker tags with null', function() {
     var result = removeTagsFromElements([{ word: '<p' }, { word: 'class="b"' }, { word: '>' }]);
     expect(result.length).to.eq(2);
-    expect(result[0]).to.be.null;
-    expect(result[1]).to.be.null;
+    expect(result[0]['word']).to.be.null;
+    expect(result[1]['word']).to.be.null;
   });
   it('removes complete non-blocker tags', function() {
     var result = removeTagsFromElements([{ word: '<span>' }]);
     expect(result.length).to.eq(1);
-    expect(result[0]).to.be.null;
+    expect(result[0]['word']).to.be.null;
   });
   it('removes split non-blocker tags', function() {
     var result = removeTagsFromElements([{ word: '<span' }, { word: 'class="b"' }, { word: '>' }]);
     expect(result.length).to.eq(1);
-    expect(result[0]).to.be.null;
+    expect(result[0]['word']).to.be.null;
   });
 });
 
@@ -91,5 +92,11 @@ describe('#explodeHtml', function() {
     expect(result[3]['offset']).to.eq(22);
     expect(result[4]['word']).to.eq('</code>');
     expect(result[4]['offset']).to.eq(29);
+  });
+});
+
+describe('#ucfirst', function() {
+  it('capitalizes the first letter', function() {
+    expect(ucfirst('lower')).to.eq('Lower');
   });
 });
