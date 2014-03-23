@@ -80,6 +80,16 @@ describe('#removeTagsFromElements', function() {
 
 describe('#explodeHtml', function() {
   it('does something', function() {
-    var elements = explodeHtml('<p class="para"> parameter. <hr p>If specified, then only substrings <hr> to <code option class="parameter">limit</code>');
+    var result = explodeHtml('<p class="say">Hello. Goodbye</code>');
+    expect(result[0]['word']).to.eq('<p ');
+    expect(result[0]['offset']).to.eq(0);
+    expect(result[1]['word']).to.eq('class="say">');
+    expect(result[1]['offset']).to.eq(3);
+    expect(result[2]['word']).to.eq('Hello. ');
+    expect(result[2]['offset']).to.eq(15);
+    expect(result[3]['word']).to.eq('Goodbye');
+    expect(result[3]['offset']).to.eq(22);
+    expect(result[4]['word']).to.eq('</code>');
+    expect(result[4]['offset']).to.eq(29);
   });
 });
