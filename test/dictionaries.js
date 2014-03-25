@@ -6,19 +6,19 @@ var expect = require('chai').expect,
 describe('#load', function() {
   it('adds a lot of words', function() {
     load();
-    expect(Object.keys(hashes['family']).length).to.be.above(55231);
-    expect(Object.keys(hashes['family_new']).length).to.be.above(42);
-    expect(Object.keys(hashes['genera']).length).to.be.above(437062);
-    expect(Object.keys(hashes['genera_new']).length).to.be.above(898);
-    expect(Object.keys(hashes['species']).length).to.be.above(660012);
-    expect(Object.keys(hashes['species_new']).length).to.be.above(1841);
-    expect(Object.keys(hashes['species_bad']).length).to.be.above(1188);
-    expect(Object.keys(hashes['ranks']).length).to.be.above(159);
-    expect(Object.keys(hashes['overlap_new']).length).to.be.above(3026);
-    expect(Object.keys(hashes['species_bad']).length).to.be.above(1188);
-    expect(Object.keys(hashes['dict_ambig']).length).to.be.above(4167);
-    expect(Object.keys(hashes['genera_family']).length).to.be.above(12);
-    expect(Object.keys(hashes['dict_bad']).length).to.be.above(10);
+    expect(Object.keys(hashes['family']).length).to.be.above(55230);
+    expect(Object.keys(hashes['family_new']).length).to.be.above(41);
+    expect(Object.keys(hashes['genera']).length).to.be.above(437061);
+    expect(Object.keys(hashes['genera_new']).length).to.be.above(897);
+    expect(Object.keys(hashes['species']).length).to.be.above(660011);
+    expect(Object.keys(hashes['species_new']).length).to.be.above(1840);
+    expect(Object.keys(hashes['species_bad']).length).to.be.above(1187);
+    expect(Object.keys(hashes['ranks']).length).to.be.above(158);
+    expect(Object.keys(hashes['overlap_new']).length).to.be.above(3025);
+    expect(Object.keys(hashes['species_bad']).length).to.be.above(1187);
+    expect(Object.keys(hashes['dict_ambig']).length).to.be.above(4166);
+    expect(Object.keys(hashes['genera_family']).length).to.be.above(11);
+    expect(Object.keys(hashes['dict_bad']).length).to.be.above(9);
   });
 
   it('adds family and above names', function() {

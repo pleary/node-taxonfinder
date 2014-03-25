@@ -26,6 +26,8 @@ Taxonfinder detects scientific names in plain text. Given a string, it will scan
 
 ## Release History
 
+* 0.2.0 Added ability to resolve abbreviated genera
+
 * 0.1.4 Updating package.json
 
 * 0.1.3 Improving documentation
