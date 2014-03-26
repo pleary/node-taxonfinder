@@ -61,6 +61,11 @@ describe('#aWholeLottaNameTests', function() {
     expectNameInText({ text: 'Felis leo leo leo leo', name: 'Felis leo leo leo', index: 0 });
     expectNameInText({ text: 'Felis leo leo leo leo leo', name: 'Felis leo leo leo', index: 0 });
   });
+  it('finds names in species lists', function() {
+    expectNameInText({ text: 'Felis leo, chaus, catus', name: 'Felis leo', index: 0 });
+    expectNameInText({ text: 'Felis leo, chaus, catus', name: 'Felis chaus', index: 1 });
+    expectNameInText({ text: 'Felis leo, chaus, catus', name: 'Felis catus', index: 2 });
+  });
 });
 
 describe('#expectNameInText', function() {
@@ -260,6 +265,11 @@ describe('#checkWordAgainstState', function() {
     expect(response['workingName']).to.be.undefined;
     expect(response['returnNameHashes'][0]['name']).to.eq('Felis leo');
   });
+  it('returns the species name if there is terminating punctuation', function() {
+    var response = checkWordAgainstState('leo;', { workingName: 'Felis leo', workingRank: 'species', workingScore: 'GS' });
+    expect(response['workingName']).to.be.undefined;
+    expect(response['returnNameHashes'][0]['name']).to.eq('Felis leo leo');
+  });
   // State Rank
   it('attaches species to ranks', function() {
     var response = checkWordAgainstState('leo', { workingName: 'Felis leo var.', workingRank: 'rank', workingScore: 'GSR' });
@@ -321,9 +331,9 @@ describe('#prepareReturnHash', function() {
     expect(response['name']).to.eq('Amanita (Amanita) muscaria muscaria muscaria');
   });
   it('avoids infinite loops', function() {
-    // I don't have a real example of this bug, but there are ways
-    // to get stuck in a loop and this is a way to check for it.
-    // (in index.js => if(currentString === nextString) ...)
+    // I don't have a real example of this bug, but were ways to get
+    // stuck in an infinite loop and this is a way to check for the fix.
+    // (see, in index.js => if(currentString === nextString) ...)
     var response = prepareReturnHash({ name: 'Amanita [] muscaria', score: 'GRS' });
     expect(response['name']).to.eq('Amanita [] muscaria');
   });

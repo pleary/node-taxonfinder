@@ -1,6 +1,6 @@
 {
   "name": "taxonfinder",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Detects scientific names in text",
   "homepage": "http://taxonfinder.org/",
   "main": "index.js",
@@ -23,9 +23,7 @@
   },
   "devDependencies": {
     "mocha": "~1.18.2",
-    "chai": "~1.9.1"
-  },
-  "dependencies": {
+    "chai": "~1.9.1",
     "coveralls": "~2.10.0",
     "mocha-lcov-reporter": "0.0.1"
   }

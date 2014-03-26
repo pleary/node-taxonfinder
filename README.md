@@ -1,7 +1,10 @@
 Taxonfinder
 =========
 
+[![NPM version](https://badge.fury.io/js/taxonfinder.png)](http://badge.fury.io/js/taxonfinder)
+
 [![Build Status](https://travis-ci.org/pleary/node-taxonfinder.svg?branch=master)](https://travis-ci.org/pleary/node-taxonfinder)
+[![Dependency Status](https://gemnasium.com/pleary/node-taxonfinder.svg)](https://gemnasium.com/pleary/node-taxonfinder)
 [![Coverage Status](https://coveralls.io/repos/pleary/node-taxonfinder/badge.png?branch=master)](https://coveralls.io/r/pleary/node-taxonfinder?branch=master)
 
 Taxonfinder detects scientific names in plain text. Given a string, it will scan through the contents and use a dictionary-based approach to identifying which words and strings are latin scientific organism names. Taxonfinder will detect names at all ranks including Kingdom, Phylum, Class, Order, Family, Genus, Species, Subspecies and lots more.
