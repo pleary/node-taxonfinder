@@ -3,9 +3,9 @@ var dictionaries = require('./lib/dictionaries.js');
 var match = null;
 
 /* Make sure the dictionaries get loaded up front */
-console.log('Loading dictionaries...');
+console.log('Loading taxonfinder dictionaries...');
 dictionaries.load();
-console.log('Dictionaries are loaded');
+console.log('taxonfinder dictionaries are loaded');
 
 var buildResult = function(name, startItem, lastItem, lastWord) {
   var resultHash = { name: name,
@@ -105,12 +105,14 @@ var checkWordAgainstState = function(word, currentStateHash) {
   word = word.trim();
   var cleanWord = utility.clean(word);
   var lowerCaseCleanWord = cleanWord.toLowerCase();
+  var capitalizedCleanWord = utility.ucfirst(lowerCaseCleanWord);
   var workingName = currentStateHash['workingName'];
   var workingRank = currentStateHash['workingRank'];
   var workingScore = currentStateHash['workingScore'];
   var genusHistory = currentStateHash['genusHistory'];
   if (!genusHistory) genusHistory = { };
   var score = null;
+  var nextWorkingName = workingName + ' ' + cleanWord;
   currentStateHash['word'] = word;
   currentStateHash['cleanWord'] = cleanWord;
   currentStateHash['lowerCaseCleanWord'] = lowerCaseCleanWord;
@@ -133,29 +135,32 @@ var checkWordAgainstState = function(word, currentStateHash) {
       if (match = workingName.match(/^([A-Z][a-z]?)$/)) {
         var lastGenus = null;
         if (lastGenus = genusHistory[match[1].toLowerCase()]) {
-          workingName = match[1] + "[" + lastGenus.substring(match[1].length) + "]";
+          nextWorkingName = match[1] + "[" + lastGenus.substring(match[1].length) + "] " + cleanWord;
         }
       }
       if (endsWithPunctuation(word)) {
         // that ends the name
-        return buildState(null, null, null, genusHistory, [ { name: workingName + ' ' + cleanWord, score: workingScore + score } ]);
-      } else {
-        // that is the next word in a name
-        return buildState(workingName + ' ' + cleanWord, 'species', workingScore + score, genusHistory);
+        return buildState(null, null, null, genusHistory, [ { name: nextWorkingName, score: workingScore + score } ]);
       }
+      // that is the next word in a name
+      return buildState(nextWorkingName, 'species', workingScore + score, genusHistory);
     }
     if (score = scoreGenus(currentStateHash)) {
       return buildState(cleanWord, 'genus', score, genusHistory, [ { name: workingName, score: workingScore } ]);
     }
     if (score = scoreFamilyOrAbove(currentStateHash)) {
       return buildState(null, null, null, genusHistory, [ { name: workingName, score: workingScore },
-                                            { name: utility.ucfirst(lowerCaseCleanWord), score: score } ]);
+                                            { name: capitalizedCleanWord, score: score } ]);
     }
   }
   // Within Species
   else if (workingRank === 'species') {
     if (score = scoreSpecies(currentStateHash)) {
-      return buildState(workingName + ' ' + cleanWord, 'species', workingScore + score, genusHistory);
+      match = workingScore.match(/s/ig);
+      if (match.length >= 2) {
+        return buildState(null, null, null, genusHistory, [ { name: nextWorkingName, score: workingScore + score } ]);
+      }
+      return buildState(nextWorkingName, 'species', workingScore + score, genusHistory);
     }
     if (score = scoreRank(currentStateHash)) {
       // node the use of `word` here to retain original punctuation
@@ -166,20 +171,20 @@ var checkWordAgainstState = function(word, currentStateHash) {
     }
     if (score = scoreFamilyOrAbove(currentStateHash)) {
       return buildState(null, null, null, genusHistory, [ { name: workingName, score: workingScore },
-                                            { name: utility.ucfirst(lowerCaseCleanWord), score: score } ]);
+                                            { name: capitalizedCleanWord, score: score } ]);
     }
   }
   // Within Rank
   else if (workingRank === 'rank') {
     if (score = scoreSpecies(currentStateHash)) {
-      return buildState(workingName + ' ' + cleanWord, 'species', workingScore + score, genusHistory);
+      return buildState(nextWorkingName, 'species', workingScore + score, genusHistory);
     }
     if (score = scoreGenus(currentStateHash)) {
       return buildState(cleanWord, 'genus', score, genusHistory, [ { name: workingName, score: workingScore } ]);
     }
     if (score = scoreFamilyOrAbove(currentStateHash)) {
       return buildState(null, null, null, genusHistory, [ { name: workingName, score: workingScore },
-                                            { name: utility.ucfirst(lowerCaseCleanWord), score: score } ]);
+                                            { name: capitalizedCleanWord, score: score } ]);
     }
   }
   // No working state
@@ -188,13 +193,13 @@ var checkWordAgainstState = function(word, currentStateHash) {
       genusHistory[lowerCaseCleanWord.substring(0, 1)] = cleanWord;
       genusHistory[lowerCaseCleanWord.substring(0, 2)] = cleanWord;
       if (endsWithPunctuation(word)) {
-        return buildState(null, null, null, genusHistory, [ { name: utility.ucfirst(lowerCaseCleanWord), score: score } ]);
+        return buildState(null, null, null, genusHistory, [ { name: capitalizedCleanWord, score: score } ]);
       } else {
         return buildState(cleanWord, 'genus', score, genusHistory);
       }
     }
     if (score = scoreFamilyOrAbove(currentStateHash)) {
-      return buildState(null, null, null, genusHistory, [ { name: utility.ucfirst(lowerCaseCleanWord), score: score } ]);
+      return buildState(null, null, null, genusHistory, [ { name: capitalizedCleanWord, score: score } ]);
     }
   }
   // Return the last known name
