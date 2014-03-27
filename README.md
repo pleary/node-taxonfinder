@@ -29,7 +29,9 @@ Taxonfinder detects scientific names in plain text. Given a string, it will scan
 
 ## Release History
 
-* 0.2.1 bumping version due to npm blip
+* 0.2.2 No longer finding insanely long names; Can now find species in a comma-delimited list
+
+* 0.2.1 Bumping version due to npm blip
 
 * 0.2.0 Added ability to resolve abbreviated genera
 

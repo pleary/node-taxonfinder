@@ -114,6 +114,8 @@ var checkWordAgainstState = function(word, currentStateHash) {
   var genusHistory = currentStateHash['genusHistory'];
   if (!genusHistory) genusHistory = { };
   var score = null;
+  var namesToReturn = null;
+  var expandedGenus = null;
   var nextWorkingName = workingName + ' ' + cleanWord;
   currentStateHash['word'] = word;
   currentStateHash['cleanWord'] = cleanWord;
@@ -130,91 +132,77 @@ var checkWordAgainstState = function(word, currentStateHash) {
   if (score = isAbbreviatedGenusWithPeriod(word)) {
     return buildState(word, cleanWord, 'genus', score, genusHistory, [ { name: workingName, score: workingScore } ]);
   }
-  // Within Genus
-  else if (workingRank === 'genus') {
-    // with valid species
+  // Within Genus or Species
+  else if (workingRank === 'genus' || workingRank === 'species') {
+    // getting valid species
     if (score = scoreSpecies(currentStateHash)) {
-      if (match = workingName.match(/^([A-Z][a-z]?)$/)) {
-        var lastGenus = null;
-        if (lastGenus = genusHistory[match[1].toLowerCase()]) {
-          nextWorkingName = match[1] + "[" + lastGenus.substring(match[1].length) + "] " + cleanWord;
-        }
+      if (expandedGenus = expandGenus({ possibleAbbreviation: workingName, genusHistory: genusHistory })) {
+        nextWorkingName = expandedGenus + " " + cleanWord;
       }
+      // that is the next in a comma-delimeted list
+      if (/,$/.test(lastWord) && /gs/i.test(workingScore)) {
+        var genus = workingName.split(' ')[0];
+        return buildState(word, genus + ' ' + cleanWord, 'species', workingScore.charAt(0) + score, genusHistory, [ { name: workingName, score: workingScore } ]);
+      }
+      match = workingScore.match(/s/ig);
+      // that is the last epithet in a quadrinomial
+      if (match && match.length >= 2) {
+        return buildState(null, null, null, null, genusHistory, [ { name: nextWorkingName, score: workingScore + score } ]);
+      }
+      // that ends the name
       if (endsWithPunctuation(word)) {
-        // that ends the name
         return buildState(null, null, null, null, genusHistory, [ { name: nextWorkingName, score: workingScore + score } ]);
       }
       // that is the next word in a name
       return buildState(word, nextWorkingName, 'species', workingScore + score, genusHistory);
     }
-    if (score = scoreGenus(currentStateHash)) {
-      return buildState(word, cleanWord, 'genus', score, genusHistory, [ { name: workingName, score: workingScore } ]);
-    }
-    if (score = scoreFamilyOrAbove(currentStateHash)) {
-      return buildState(null, null, null, null, genusHistory, [ { name: workingName, score: workingScore },
-                                            { name: capitalizedCleanWord, score: score } ]);
-    }
   }
   // Within Species
-  else if (workingRank === 'species') {
-    if (score = scoreSpecies(currentStateHash)) {
-      match = workingScore.match(/s/ig);
-      if (match.length >= 2) {
-        return buildState(null, null, null, null, genusHistory, [ { name: nextWorkingName, score: workingScore + score } ]);
-      }
-      if (/,$/.test(lastWord) && /gs/i.test(workingScore)) {
-        var genus = workingName.split(' ')[0];
-        return buildState(word, genus + ' ' + cleanWord, 'species', workingScore.charAt(0) + score, genusHistory, [ { name: workingName, score: workingScore } ]);
-      }
-      if (endsWithPunctuation(word)) {
-        // that ends the name
-        return buildState(null, null, null, null, genusHistory, [ { name: nextWorkingName, score: workingScore + score } ]);
-      }
-      return buildState(word, nextWorkingName, 'species', workingScore + score, genusHistory);
-    }
+  if (workingRank === 'species') {
+    // getting rank
     if (score = scoreRank(currentStateHash)) {
       // note the use of `word` here to retain original punctuation
       return buildState(word, workingName + ' ' + word, 'rank', workingScore + score, genusHistory);
     }
-    if (score = scoreGenus(currentStateHash)) {
-      return buildState(word, cleanWord, 'genus', score, genusHistory, [ { name: workingName, score: workingScore } ]);
-    }
-    if (score = scoreFamilyOrAbove(currentStateHash)) {
-      return buildState(null, null, null, null, genusHistory, [ { name: workingName, score: workingScore },
-                                            { name: capitalizedCleanWord, score: score } ]);
-    }
   }
   // Within Rank
-  else if (workingRank === 'rank') {
+  if (workingRank === 'rank') {
+    // getting species
     if (score = scoreSpecies(currentStateHash)) {
       return buildState(word, nextWorkingName, 'species', workingScore + score, genusHistory);
     }
-    if (score = scoreGenus(currentStateHash)) {
-      return buildState(word, cleanWord, 'genus', score, genusHistory, [ { name: workingName, score: workingScore } ]);
-    }
-    if (score = scoreFamilyOrAbove(currentStateHash)) {
-      return buildState(null, null, null, null, genusHistory, [ { name: workingName, score: workingScore },
-                                            { name: capitalizedCleanWord, score: score } ]);
+  }
+  if (score = scoreGenus(currentStateHash)) {
+    genusHistory[lowerCaseCleanWord.substring(0, 1)] = cleanWord;
+    genusHistory[lowerCaseCleanWord.substring(0, 2)] = cleanWord;
+    namesToReturn = [];
+    if (workingName) namesToReturn.push({ name: workingName, score: workingScore });
+    if (endsWithPunctuation(word)) {
+      namesToReturn.push({ name: capitalizedCleanWord, score: score });
+      return buildState(null, null, null, null, genusHistory, namesToReturn);
+    } else {
+      return buildState(word, cleanWord, 'genus', score, genusHistory, namesToReturn);
     }
   }
-  // No working state
-  else {
-    if (score = scoreGenus(currentStateHash)) {
-      genusHistory[lowerCaseCleanWord.substring(0, 1)] = cleanWord;
-      genusHistory[lowerCaseCleanWord.substring(0, 2)] = cleanWord;
-      if (endsWithPunctuation(word)) {
-        return buildState(null, null, null, null, genusHistory, [ { name: capitalizedCleanWord, score: score } ]);
-      } else {
-        return buildState(word, cleanWord, 'genus', score, genusHistory);
-      }
-    }
-    if (score = scoreFamilyOrAbove(currentStateHash)) {
-      return buildState(null, null, null, null, genusHistory, [ { name: capitalizedCleanWord, score: score } ]);
-    }
+  if (score = scoreFamilyOrAbove(currentStateHash)) {
+    namesToReturn = [];
+    if (workingName) namesToReturn.push({ name: workingName, score: workingScore });
+    namesToReturn.push({ name: capitalizedCleanWord, score: score });
+    return buildState(null, null, null, null, genusHistory, namesToReturn);
   }
   // Return the last known name
   return buildState(null, null, null, null, genusHistory, [ { name: workingName, score: workingScore } ]);
 }
+
+var expandGenus = function(options) {
+  utility.extract(options, this);
+  if (match = possibleAbbreviation.match(/^([A-Z][a-z]?)$/)) {
+    var lastGenus = null;
+    if (lastGenus = genusHistory[match[1].toLowerCase()]) {
+      return match[1] + "[" + lastGenus.substring(match[1].length) + "]";
+    }
+  }
+};
 
 var prepareReturnHash = function(returnNameHash) {
   var name = returnNameHash['name'];
