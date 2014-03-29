@@ -3,7 +3,7 @@ var expect = require('chai').expect,
     clean = utility.clean,
     addWordToEndOfOffsetList = utility.addWordToEndOfOffsetList,
     isStopTag = utility.isStopTag,
-    explodeHtml = utility.explodeHtml,
+    explodeText = utility.explodeText,
     removeTagsFromElements = utility.removeTagsFromElements,
     ucfirst = utility.ucfirst;
 
@@ -51,43 +51,34 @@ describe('#isStopTag', function() {
 });
 
 describe('#removeTagsFromElements', function() {
-  it('always returns null as the last item', function() {
-    var result = removeTagsFromElements([ ]);
-    expect(result.length).to.eq(1);
-    expect(result[0]['word']).to.be.null;
-  });
   it('does nothing with plain text', function() {
     var result = removeTagsFromElements([{ word: 'hello' }]);
-    expect(result.length).to.eq(2);
+    expect(result.length).to.eq(1);
     expect(result[0]['word']).to.eq('hello');
   });
   it('replaces complete blocker tags with null', function() {
     var result = removeTagsFromElements([{ word: '<p>' }]);
-    expect(result.length).to.eq(2);
+    expect(result.length).to.eq(1);
     expect(result[0]['word']).to.be.null;
-    expect(result[1]['word']).to.be.null;
   });
   it('replaces split blocker tags with null', function() {
     var result = removeTagsFromElements([{ word: '<p' }, { word: 'class="b"' }, { word: '>' }]);
-    expect(result.length).to.eq(2);
+    expect(result.length).to.eq(1);
     expect(result[0]['word']).to.be.null;
-    expect(result[1]['word']).to.be.null;
   });
   it('removes complete non-blocker tags', function() {
     var result = removeTagsFromElements([{ word: '<span>' }]);
-    expect(result.length).to.eq(1);
-    expect(result[0]['word']).to.be.null;
+    expect(result).to.be.empty;
   });
   it('removes split non-blocker tags', function() {
     var result = removeTagsFromElements([{ word: '<span' }, { word: 'class="b"' }, { word: '>' }]);
-    expect(result.length).to.eq(1);
-    expect(result[0]['word']).to.be.null;
+    expect(result).to.be.empty;
   });
 });
 
-describe('#explodeHtml', function() {
+describe('#explodeText', function() {
   it('does something', function() {
-    var result = explodeHtml('<p class="say">Hello. Goodbye</code>');
+    var result = explodeText('<p class="say">Hello. Goodbye</code>');
     expect(result[0]['word']).to.eq('<p ');
     expect(result[0]['offset']).to.eq(0);
     expect(result[1]['word']).to.eq('class="say">');

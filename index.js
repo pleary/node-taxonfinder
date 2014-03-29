@@ -6,8 +6,8 @@ console.log('Loading taxonfinder dictionaries...');
 dictionaries.load();
 console.log('taxonfinder dictionaries are loaded');
 
-var findNamesAndOffsets = function(html) {
-  return parser.findNamesAndOffsets(html);
+var findNamesAndOffsets = function(html, isHtml) {
+  return parser.findNamesAndOffsets(html, isHtml);
 };
 
 module.exports = {

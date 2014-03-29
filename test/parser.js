@@ -44,6 +44,12 @@ describe('#findNamesAndOffsets', function() {
     expect(result[0]['offsets'][0]).to.eq(0);
     expect(result[0]['offsets'][1]).to.eq(16);
   });
+  it('allows plain test', function() {
+    var result = findNamesAndOffsets('Text <e this would break HTML parsing Amanita muscaria');
+    expect(result[0]['name']).to.eq('Amanita muscaria');
+    var result = findNamesAndOffsets('Text <e this would break HTML parsing Amanita muscaria', true);
+    expect(result).to.be.empty;
+  });
 });
 
 describe('#isAbbreviatedGenus', function() {
@@ -96,14 +102,14 @@ describe('#checkWordAgainstState', function() {
     expect(response['workingName']).to.be.undefined;
     expect(response['workingRank']).to.be.undefined;
     expect(response['returnNameHashes']).to.be.undefined;
-    expect(Object.keys(response['genusHistory']).length).to.eq(0);
+    expect(Object.keys(response['genusHistory'])).to.be.empty;
   });
   it('does nothing with nonsense', function() {
     var response = checkWordAgainstState('nonsense');
     expect(response['workingName']).to.be.undefined;
     expect(response['workingRank']).to.be.undefined;
     expect(response['returnNameHashes']).to.be.undefined;
-    expect(Object.keys(response['genusHistory']).length).to.eq(0);
+    expect(Object.keys(response['genusHistory'])).to.be.empty;
   });
   it('returns working name when finding potential abbreviations', function() {
     var response = checkWordAgainstState('F.', { workingName: 'Felis', workingRank: 'genus', workingScore: 'G' });
@@ -137,6 +143,11 @@ describe('#checkWordAgainstState', function() {
     expect(response['returnNameHashes'][0]['name']).to.eq('Felis');
   });
   // State Genus
+  it('returns the species name if there is terminating punctuation', function() {
+    var response = checkWordAgainstState('leo;', { workingName: 'Felis', workingRank: 'genus', workingScore: 'G' });
+    expect(response['workingName']).to.be.undefined;
+    expect(response['returnNameHashes'][0]['name']).to.eq('Felis leo');
+  });
   it('returns the species name if there is terminating punctuation', function() {
     var response = checkWordAgainstState('leo;', { workingName: 'Felis', workingRank: 'genus', workingScore: 'G' });
     expect(response['workingName']).to.be.undefined;
@@ -362,7 +373,7 @@ describe('#scoreRank', function() {
 
 describe('#buildState', function() {
   it('sets reasonable defaults', function() {
-    expect(Object.keys(buildState()).length).be.eq(0);
+    expect(Object.keys(buildState())).to.be.empty;
   });
 });
 

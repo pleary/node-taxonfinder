@@ -28,6 +28,16 @@ describe('#aWholeLottaNameTests', function() {
     expectNameInText({ text: 'Felis leo, chaus, catus', name: 'Felis chaus', index: 1 });
     expectNameInText({ text: 'Felis leo, chaus, catus', name: 'Felis catus', index: 2 });
   });
+  it('finds subgenera', function() {
+    expectNameInText({ text: 'Felis (Felis) leo', name: 'Felis (Felis) leo', index: 0 });
+  });
+  it('doesnt find nonsense subgenera', function() {
+    expectNameInText({ text: 'Pomatomus (Ignoreme) saltatrix', name: 'Pomatomus', index: 0 });
+  });
+  it('expands with subgenera', function() {
+    expectNameInText({ text: 'Pomatomus; P. (Pomatomus) saltatrix', name: 'Pomatomus', index: 0 });
+    expectNameInText({ text: 'Pomatomus; P. (Pomatomus) saltatrix', name: 'Pomatomus (Pomatomus) saltatrix', index: 1 });
+  });
 });
 
 // describe('#checksATestDocument', function() {
