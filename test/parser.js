@@ -2,7 +2,6 @@ var expect = require('chai').expect,
     parser = require('../lib/parser'),
     utility = require('../lib/utility'),
     findNamesAndOffsets = parser.findNamesAndOffsets,
-    isAbbreviatedGenus = parser.isAbbreviatedGenus,
     isAbbreviatedGenusWithPeriod = parser.isAbbreviatedGenusWithPeriod,
     startsWithPunctuation = parser.startsWithPunctuation,
     endsWithPunctuation = parser.endsWithPunctuation,
@@ -25,8 +24,8 @@ describe('#findNamesAndOffsets', function() {
     expect(result[1]['offsets'][0]).to.eq(25);
     expect(result[1]['offsets'][1]).to.eq(38);
     expect(result[2]['name']).to.eq('Canidae');
-    expect(result[2]['offsets'][0]).to.eq(39);
-    expect(result[2]['offsets'][1]).to.eq(46);
+    expect(result[2]['offsets'][0]).to.eq(40);
+    expect(result[2]['offsets'][1]).to.eq(47);
   });
   it('expands abbreviated genera', function() {
     var result = findNamesAndOffsets('Pomatomus, P. saltator');
@@ -44,6 +43,18 @@ describe('#findNamesAndOffsets', function() {
     expect(result[0]['offsets'][0]).to.eq(0);
     expect(result[0]['offsets'][1]).to.eq(16);
   });
+  it('gets correct offsets abbreviations are followed by genera', function() {
+    var result = findNamesAndOffsets('P. Pomatomus more words');
+    expect(result[0]['name']).to.eq('Pomatomus');
+    expect(result[0]['offsets'][0]).to.eq(3);
+    expect(result[0]['offsets'][1]).to.eq(12);
+  });
+  it('gets correct offsets abbreviations are followed by families', function() {
+    var result = findNamesAndOffsets('P. Animalia more words');
+    expect(result[0]['name']).to.eq('Animalia');
+    expect(result[0]['offsets'][0]).to.eq(3);
+    expect(result[0]['offsets'][1]).to.eq(11);
+  });
   it('allows plain test', function() {
     var result = findNamesAndOffsets('Text <e this would break HTML parsing Amanita muscaria');
     expect(result[0]['name']).to.eq('Amanita muscaria');
@@ -52,21 +63,10 @@ describe('#findNamesAndOffsets', function() {
   });
 });
 
-describe('#isAbbreviatedGenus', function() {
-  it('recognizes abreviations without periods', function() {
-    expect(isAbbreviatedGenus("G")).to.eq('g');
-    expect(isAbbreviatedGenus("Gr")).to.eq('g');
-  });
-  it('recognizes non-abbreviations', function() {
-    expect(isAbbreviatedGenus("Gr.")).to.be.false;
-    expect(isAbbreviatedGenus("Gro")).to.be.false;
-  });
-});
-
 describe('#isAbbreviatedGenusWithPeriod', function() {
   it('recognizes abreviations with periods', function() {
-    expect(isAbbreviatedGenusWithPeriod("G.")).to.eq('g');
-    expect(isAbbreviatedGenusWithPeriod("Gr.")).to.eq('g');
+    expect(isAbbreviatedGenusWithPeriod("G.")).to.eq('a');
+    expect(isAbbreviatedGenusWithPeriod("Gr.")).to.eq('a');
   });
   it('recognizes non-abbreviations', function() {
     expect(isAbbreviatedGenusWithPeriod("Gr")).to.be.false;

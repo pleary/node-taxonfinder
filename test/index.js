@@ -1,10 +1,9 @@
 var expect = require('chai').expect,
-    fs = require('fs'),
     taxonfinder = require('../index'),
     findNamesAndOffsets = taxonfinder.findNamesAndOffsets,
     testText = null;
 
-describe('#aWholeLottaNameTests', function() {
+describe('#findNamesAndOffsets', function() {
   it('gets the name when the string is exactly the name', function() {
     expectNameInText({ text: 'Felis leo', name: 'Felis leo' });
   });
@@ -39,12 +38,6 @@ describe('#aWholeLottaNameTests', function() {
     expectNameInText({ text: 'Pomatomus; P. (Pomatomus) saltatrix', name: 'Pomatomus (Pomatomus) saltatrix', index: 1 });
   });
 });
-
-// describe('#checksATestDocument', function() {
-//   it('logs the results of a run against a test file', function() {
-//     console.log(findNamesAndOffsets(fs.readFileSync('test.txt').toString()));
-//   });
-// });
 
 describe('#expectNameInText', function() {
   it('gets the name when the string is exactly the name', function() {
